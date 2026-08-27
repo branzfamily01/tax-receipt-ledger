@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#14532d">
+  <meta name="description" content="レシートを端末内に保存し、確定申告向けの経費台帳とExcelを作るローカル優先Webアプリ">
+  <title>経費レシート台帳</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar">
+  <div>
+    <p class="eyebrow">Tax Receipt Ledger</p>
+    <h1>経費レシート台帳</h1>
+  </div>
+  <a class="help-btn" href="manual.html" aria-label="使い方を開く">？ 使い方</a>
+</header>
+
+<main class="shell">
+  <section class="hero card">
+    <div>
+      <p class="hero-kicker">撮る → 確認 → 保存 → Excel</p>
+      <h2>確定申告のレシート整理を、あと回しにしない。</h2>
+      <p class="muted">画像と取引情報はこの端末のブラウザ内に保存します。OCRは候補を出すだけ。最後は自分で確認して確定します。</p>
+    </div>
+    <button class="primary big" id="addReceiptBtn">＋ レシートを追加</button>
+  </section>
+
+  <section class="year-row">
+    <label>対象年
+      <select id="yearFilter"></select>
+    </label>
+    <label>所得区分
+      <select id="incomeFilter">
+        <option value="all">すべて</option>
+        <option>不動産所得</option>
+        <option>事業所得</option>
+        <option>雑所得</option>
+      </select>
+    </label>
+  </section>
+
+  <section class="metrics" aria-label="集計">
+    <article class="metric card"><span>経費計上額</span><strong id="metricExpense">¥0</strong></article>
+    <article class="metric card"><span>件数</span><strong id="metricCount">0</strong></article>
+    <article class="metric card warning"><span>要確認</span><strong id="metricReview">0</strong></article>
+  </section>
+
+  <nav class="tabs" aria-label="画面切替">
+    <button class="tab active" data-tab="receipts">レシート</button>
+    <button class="tab" data-tab="summary">集計</button>
+    <button class="tab" data-tab="export">出力・設定</button>
+  </nav>
+
+  <section id="receiptsPanel" class="panel active">
+    <div class="toolbar card">
+      <input id="searchInput" type="search" placeholder="支払先・用途・科目で検索">
+      <select id="statusFilter"><option value="all">確認状態：すべて</option><option value="review">要確認のみ</option><option value="confirmed">確認済みのみ</option></select>
+    </div>
+    <div id="receiptList" class="receipt-list"></div>
+    <div id="emptyState" class="empty card">
+      <div class="empty-icon">🧾</div>
+      <h3>まだレシートがありません</h3>
+      <p>最初の1枚を登録すると、ここに一覧が出ます。</p>
+      <button class="primary" id="emptyAddBtn">レシートを追加</button>
+    </div>
+  </section>
+
+  <section id="summaryPanel" class="panel">
+    <div class="card section-card">
+      <div class="section-head"><div><p class="eyebrow">Category Summary</p><h2>科目別集計</h2></div></div>
+      <div id="categorySummary"></div>
+    </div>
+    <div class="card section-card">
+      <div class="section-head"><div><p class="eyebrow">Monthly Summary</p><h2>月別集計</h2></div></div>
+      <div id="monthSummary"></div>
+    </div>
+  </section>
+
+  <section id="exportPanel" class="panel">
+    <div class="card section-card">
+      <p class="eyebrow">Tax Export</p><h2>確定申告用に出力</h2>
+      <p class="muted">対象年・所得区分の絞り込みを反映します。Excelには「経費台帳」「科目別集計」「月別集計」の3シートを作成します。</p>
+      <div class="button-grid">
+        <button class="primary" id="xlsxBtn">Excel（.xlsx）を作る</button>
+        <button class="secondary" id="csvBtn">CSVを作る</button>
+      </div>
+    </div>
+    <div class="card section-card">
+      <p class="eyebrow">Backup</p><h2>データのバックアップ</h2>
+      <p class="muted">ブラウザのデータが消える場合に備え、画像込みのバックアップを定期的に保存してください。</p>
+      <div class="button-grid">
+        <button class="secondary" id="backupBtn">画像込みバックアップ</button>
+        <label class="secondary file-label">バックアップを復元<input id="restoreInput" type="file" accept="application/json,.json" hidden></label>
+      </div>
+    </div>
+    <div class="card section-card danger-zone">
+      <p class="eyebrow">Reset</p><h2>全データ削除</h2>
+      <p class="muted">この端末内の登録データと画像を削除します。元に戻せません。</p>
+      <button class="danger" id="resetBtn">全データを削除</button>
+    </div>
+    <div class="notice"><strong>税務上の注意：</strong> 科目や必要経費への該当は、取引内容・使用目的・契約関係などで変わります。このアプリは整理・集計を支援するもので、税務判断を確定するものではありません。</div>
+  </section>
+</main>
+
+<dialog id="receiptDialog">
+  <form id="receiptForm" method="dialog">
+    <div class="dialog-head">
+      <div><p class="eyebrow">Receipt Entry</p><h2 id="dialogTitle">レシートを追加</h2></div>
+      <button type="button" class="icon-btn" id="closeDialogBtn" aria-label="閉じる">×</button>
+    </div>
+
+    <section class="capture card-inner">
+      <input id="receiptId" type="hidden">
+      <label class="capture-box" id="captureBox">
+        <input id="imageInput" type="file" accept="image/*" capture="environment" hidden>
+        <img id="imagePreview" alt="レシート画像プレビュー" hidden>
+        <div id="capturePrompt"><span class="camera">📷</span><strong>レシートを撮る・選ぶ</strong><small>JPEG / PNG / HEICは端末により表示可否が異なります</small></div>
+      </label>
+      <div class="ocr-row">
+        <button type="button" class="secondary" id="ocrBtn">文字を自動で読む（OCR）</button>
+        <span class="muted small" id="ocrStatus">ネットなしでも手入力できます</span>
+      </div>
+      <details id="ocrDetails"><summary>OCR原文を見る</summary><textarea id="ocrText" rows="6" placeholder="OCRした文字がここに入ります"></textarea></details>
+    </section>
+
+    <section class="form-grid">
+      <label>取引日<span class="req">必須</span><input id="dateInput" type="date" required></label>
+      <label>支払先<span class="req">必須</span><input id="vendorInput" required placeholder="例：○○ホームセンター"></label>
+      <label>支払額（税込）<span class="req">必須</span><input id="amountInput" type="number" min="0" step="1" inputmode="numeric" required placeholder="10000"></label>
+      <label>事業利用割合<input id="businessPctInput" type="number" min="0" max="100" step="1" value="100"><span class="suffix">%</span></label>
+      <label>経費計上額<input id="expenseInput" type="number" min="0" step="1" inputmode="numeric" readonly></label>
+      <label>所得区分<select id="incomeTypeInput"><option>不動産所得</option><option>事業所得</option><option>雑所得</option></select></label>
+      <label>勘定科目<select id="categoryInput"></select></label>
+      <label>支払方法<select id="paymentInput"><option>現金</option><option>クレジットカード</option><option>銀行振込</option><option>電子マネー・QR</option><option>口座振替</option><option>その他</option></select></label>
+      <label class="full">内容・用途<span class="req">必須</span><input id="purposeInput" required placeholder="例：賃貸物件の共用部用電球"></label>
+      <label class="full">メモ<textarea id="memoInput" rows="2" placeholder="按分根拠、物件名、確認事項など"></textarea></label>
+    </section>
+
+    <div id="categoryHint" class="hint"></div>
+    <label class="confirm-box"><input id="confirmedInput" type="checkbox"><span><strong>日付・支払先・金額・科目を自分で確認した</strong><small>未チェックでも保存できますが「要確認」として残ります。</small></span></label>
+
+    <div class="dialog-actions">
+      <button type="button" class="danger ghost" id="deleteBtn" hidden>削除</button>
+      <span class="spacer"></span>
+      <button type="button" class="secondary" id="cancelBtn">キャンセル</button>
+      <button type="submit" class="primary">保存する</button>
+    </div>
+  </form>
+</dialog>
+
+<div id="toast" role="status" aria-live="polite"></div>
+<script src="app-core-a.js"></script>
+<script src="app-core-b.js"></script>
+<script src="app-export-a.js"></script>
+<script src="app-export-b.js"></script>
+</body></html>
