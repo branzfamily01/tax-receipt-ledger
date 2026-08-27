@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "title": "経費レシート台帳",
+  "category": "Tools",
+  "summary": "レシート画像・経費情報・事業按分を端末内で整理し、確定申告向けのExcel台帳へ出力できるローカル優先Webアプリ。",
+  "tags": [
+    "確定申告",
+    "レシート",
+    "経費",
+    "Excel",
+    "OCR",
+    "不動産所得"
+  ],
+  "color": "blue",
+  "status": "active",
+  "visibility": "public",
+  "manualUrl": "https://branzfamily01.github.io/tax-receipt-ledger/manual.html"
+}
