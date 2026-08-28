@@ -9,6 +9,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="pdf-import.css">
 </head>
 <body>
 <header class="topbar">
@@ -26,7 +27,7 @@
       <h2>確定申告のレシート整理を、あと回しにしない。</h2>
       <p class="muted">画像と取引情報はこの端末のブラウザ内に保存します。OCRは候補を出すだけ。最後は自分で確認して確定します。</p>
     </div>
-    <button class="primary big" id="addReceiptBtn">＋ レシートを追加</button>
+    <div class="hero-actions"><button class="primary big" id="addReceiptBtn">＋ レシートを追加</button><button class="secondary big" id="pdfImportOpenBtn">📄 vFlat PDFを一括取り込み</button></div>
   </section>
 
   <section class="year-row">
@@ -106,6 +107,45 @@
   </section>
 </main>
 
+<dialog id="pdfDialog" class="pdf-dialog">
+  <div class="pdf-dialog-body">
+    <div class="dialog-head">
+      <div><p class="eyebrow">vFlat PDF Import</p><h2>PDFをまとめて取り込む</h2></div>
+      <button type="button" class="icon-btn" id="pdfCloseBtn" aria-label="閉じる">×</button>
+    </div>
+    <div class="pdf-intro">
+      <strong>おすすめ：vFlat Scanで「1ページ＝1レシート」のPDFを作る</strong>
+      <p>PDFを1ページずつJPEG画像へ分解し、OCR候補を付けて「要確認」として台帳へまとめて登録します。</p>
+    </div>
+    <label class="pdf-file-box">
+      <input id="pdfFileInput" type="file" accept="application/pdf,.pdf" hidden>
+      <span class="pdf-icon">📄</span><strong>PDFを選ぶ</strong><small id="pdfFileName">まだPDFが選ばれていません</small>
+    </label>
+    <p class="muted small" id="pdfPageInfo"></p>
+    <div class="pdf-options">
+      <label>開始ページ<input id="pdfStartPage" type="number" min="1" value="1"></label>
+      <label>終了ページ<input id="pdfEndPage" type="number" min="1"></label>
+      <label>所得区分<select id="pdfIncomeType"><option>不動産所得</option><option>事業所得</option><option>雑所得</option></select></label>
+      <label>初期の勘定科目<select id="pdfDefaultCategory"></select></label>
+      <label>支払方法<select id="pdfPayment"><option>現金</option><option>クレジットカード</option><option>銀行振込</option><option>電子マネー・QR</option><option>口座振替</option><option>その他</option></select></label>
+      <label>事業利用割合<input id="pdfBusinessPct" type="number" min="0" max="100" value="100"><span class="suffix">%</span></label>
+      <label class="full">内容・用途の初期値<input id="pdfPurpose" value="vFlat PDFから取り込み"></label>
+    </div>
+    <label class="confirm-box pdf-ocr-toggle"><input id="pdfAutoOcr" type="checkbox" checked><span><strong>各ページをOCRして候補を入れる</strong><small>日付・支払先・金額・科目を候補入力します。必ず後で確認してください。初回は通信が必要です。</small></span></label>
+    <div class="pdf-progress-wrap">
+      <progress id="pdfProgress" value="0" max="1"></progress>
+      <p id="pdfStatus" class="muted small">vFlat Scanで作ったPDFを選んでください。</p>
+    </div>
+    <div id="pdfResults" class="pdf-results" aria-live="polite"></div>
+    <div class="dialog-actions">
+      <button type="button" class="danger ghost" id="pdfCancelProcessBtn" hidden>処理を中止</button>
+      <span class="spacer"></span>
+      <button type="button" class="primary" id="pdfImportBtn" disabled>ページを分解して登録候補にする</button>
+    </div>
+    <div class="notice pdf-note"><strong>重要：</strong> 1ページに複数のレシートが写っている場合、このモードでは1件として扱います。vFlat側で1レシートを1ページにしてから取り込むのがおすすめです。</div>
+  </div>
+</dialog>
+
 <dialog id="receiptDialog">
   <form id="receiptForm" method="dialog">
     <div class="dialog-head">
@@ -157,4 +197,5 @@
 <script src="app-core-b.js"></script>
 <script src="app-export-a.js"></script>
 <script src="app-export-b.js"></script>
+<script src="pdf-import.js"></script>
 </body></html>
