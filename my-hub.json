@@ -2,15 +2,8 @@
   "schemaVersion": 1,
   "title": "経費レシート台帳",
   "category": "Tools",
-  "summary": "レシート画像・経費情報・事業按分を端末内で整理し、確定申告向けのExcel台帳へ出力できるローカル優先Webアプリ。",
-  "tags": [
-    "確定申告",
-    "レシート",
-    "経費",
-    "Excel",
-    "OCR",
-    "不動産所得"
-  ],
+  "summary": "レシート画像・vFlat PDF・経費情報・事業按分を端末内で整理し、確定申告向けのExcel台帳へ出力できるローカル優先Webアプリ。",
+  "tags": ["確定申告", "レシート", "経費", "Excel", "OCR", "PDF", "vFlat", "不動産所得"],
   "color": "blue",
   "status": "active",
   "visibility": "public",
